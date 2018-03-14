@@ -23,10 +23,15 @@ provider:
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
       Resource: "arn:aws:dynamodb:us-east-1:*:*"
+    - Effect: Allow
+      Action:
+        - ses:SendEmail
+      Resource: "arn:aws:ses:us-east-1:*:*"
   environment:
     STAGE: ${opt:stage}
     API_KEY_TABLE_NAME: ${self:custom.api_key_table_name}
     USER_TABLE_NAME: ${self:custom.user_table_name}
+    BASE_URL: { "Fn::Join" : ["", [" https://", { "Ref" : "ApiGatewayRestApi" }, ".execute-api.us-east-1.amazonaws.com/${opt:stage}" ] ]  }
 
 functions:
   root:
@@ -34,6 +39,13 @@ functions:
     events:
       - http:
           path: /
+          method: post
+          cors: true
+  auth:
+    handler: index.auth
+    events:
+      - http:
+          path: auth
           method: post
           cors: true
 

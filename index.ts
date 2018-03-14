@@ -1,9 +1,12 @@
 import 'reflect-metadata';
 
 import ApiKeyService from './lib/ApiKeyService';
+import SesService from './lib/SesService';
 import UserService from './lib/UserService';
+import ApiKey from './model/ApiKey';
 
 const apiKeyService = new ApiKeyService();
+const sesService = new SesService();
 const userService = new UserService();
 
 exports.root = async (event: AWSLambda.APIGatewayEvent, context: AWSLambda.Context, callback: AWSLambda.Callback) => {
@@ -32,4 +35,17 @@ exports.root = async (event: AWSLambda.APIGatewayEvent, context: AWSLambda.Conte
       statusCode: 400
     });
   }
+};
+
+exports.auth = async (event: AWSLambda.APIGatewayEvent, context: AWSLambda.Context, callback: AWSLambda.Callback) => {
+  const payload = JSON.parse(event.body);
+  if (!payload.key || !payload.email || !payload.hostname) {
+    throw new Error('Missing required body parameters');
+  }
+  const apiKey = new ApiKey(payload.key, payload.email, payload.hostname);
+  // await apiKeyService.save(apiKey);
+  await sesService.sendApiKeyConfirmation(apiKey);
+  callback(null, {
+    statusCode: 200
+  });
 };

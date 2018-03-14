@@ -9,6 +9,7 @@
   "devDependencies": {
     "@types/aws-lambda": "0.0.22",
     "@types/node": "^8.0.57",
+    "@types/uuid": "^3.4.3",
     "@types/winston": "^2.3.8",
     "aws-sdk": "^2.202.0",
     "class-transformer": "^0.1.9",
@@ -19,6 +20,7 @@
     "ts-loader": "^2.3.7",
     "tslint": "^5.8.0",
     "typescript": "^2.5.2",
+    "uuid": "^3.2.1",
     "webpack": "^3.6.0",
     "winston": "^2.4.0"
   },
