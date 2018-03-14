@@ -7,6 +7,7 @@ plugins:
 
 custom:
   api_key_table_name: CLI-Login-API-Keys-${opt:stage}
+  token_table_name: CLI-Login-Token-${opt:stage}
   user_table_name: CLI-Login-Users-${opt:stage}
 
 provider:
@@ -30,6 +31,7 @@ provider:
   environment:
     STAGE: ${opt:stage}
     API_KEY_TABLE_NAME: ${self:custom.api_key_table_name}
+    TOKEN_TABLE_NAME: ${self:custom.token_table_name}
     USER_TABLE_NAME: ${self:custom.user_table_name}
     BASE_URL: { "Fn::Join" : ["", [" https://", { "Ref" : "ApiGatewayRestApi" }, ".execute-api.us-east-1.amazonaws.com/${opt:stage}" ] ]  }
 
@@ -48,6 +50,16 @@ functions:
           path: auth
           method: post
           cors: true
+  confirm:
+    handler: index.confirm
+    events:
+      - http:
+          path: confirm/{token}
+          method: get
+          request:
+            parameters:
+              paths:
+                token: true
 
 resources:
   Resources:
@@ -66,6 +78,21 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:custom.api_key_table_name}
+    TokenDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: token
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: token
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.token_table_name}
     UserDynamoDbTable:
       Type: 'AWS::DynamoDB::Table'
       Properties:

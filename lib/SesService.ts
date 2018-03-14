@@ -6,7 +6,7 @@ export default class SesService {
   private client = new SES();
 
   public async sendApiKeyConfirmation(key: ApiKey): Promise<void> {
-    const confirmationUrl = `${process.env.BASE_URL}/confirm/${key.confirmationToken}`;
+    const confirmationUrl = `${process.env.BASE_URL}/confirm/${key.token}`;
     await this.client.sendEmail({
       Destination: {
         ToAddresses: [

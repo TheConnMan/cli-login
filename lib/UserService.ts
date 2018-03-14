@@ -15,4 +15,11 @@ export default class UserService {
     }).promise();
     return plainToClass(User, response.Item);
   }
+
+  public async save(user: User) {
+    return this.client.put({
+      Item: user,
+      TableName: process.env.USER_TABLE_NAME
+    }).promise();
+  }
 }

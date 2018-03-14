@@ -3,7 +3,9 @@ import 'reflect-metadata';
 import ApiKeyService from './lib/ApiKeyService';
 import SesService from './lib/SesService';
 import UserService from './lib/UserService';
+
 import ApiKey from './model/ApiKey';
+import User from './model/User';
 
 const apiKeyService = new ApiKeyService();
 const sesService = new SesService();
@@ -43,9 +45,31 @@ exports.auth = async (event: AWSLambda.APIGatewayEvent, context: AWSLambda.Conte
     throw new Error('Missing required body parameters');
   }
   const apiKey = new ApiKey(payload.key, payload.email, payload.hostname);
-  // await apiKeyService.save(apiKey);
+  await apiKeyService.saveToken(apiKey);
   await sesService.sendApiKeyConfirmation(apiKey);
   callback(null, {
     statusCode: 200
   });
+};
+
+exports.confirm = async (event: AWSLambda.APIGatewayEvent, context: AWSLambda.Context, callback: AWSLambda.Callback) => {
+  try {
+    const key = await apiKeyService.getByToken(event.pathParameters.token);
+    await apiKeyService.deleteToken(key);
+    delete key.token;
+    await apiKeyService.save(key);
+    const user = await userService.getUser(key.email);
+    if (!user) {
+      userService.save(new User(key.email));
+    }
+    callback(null, {
+      body: JSON.stringify(key),
+      statusCode: 200
+    });
+  } catch (e) {
+    callback(null, {
+      body: e.message,
+      statusCode: 500
+    });
+  }
 };
