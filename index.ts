@@ -40,16 +40,36 @@ exports.root = async (event: AWSLambda.APIGatewayEvent, context: AWSLambda.Conte
 };
 
 exports.auth = async (event: AWSLambda.APIGatewayEvent, context: AWSLambda.Context, callback: AWSLambda.Callback) => {
-  const payload = JSON.parse(event.body);
-  if (!payload.key || !payload.email || !payload.hostname) {
-    throw new Error('Missing required body parameters');
+  try {
+    const payload = JSON.parse(event.body);
+    if (!payload.key || !payload.email || !payload.hostname) {
+      throw new Error('Missing required body parameters');
+    }
+    const apiKey = new ApiKey(payload.key, payload.email, payload.hostname);
+    await apiKeyService.saveToken(apiKey);
+    await sesService.sendApiKeyConfirmation(apiKey);
+    const result = await recursiveWait(0, 15, 5000, () => {
+      return apiKeyService.get(apiKey.key);
+    });
+    if (result) {
+      callback(null, {
+        body: JSON.stringify(result),
+        headers: {
+          'Content-Type': 'text/plain'
+        },
+        statusCode: 200
+      });
+    }
+    throw new Error('Request timed out, please try again');
+  } catch (e) {
+    callback(null, {
+      body: e.message,
+      headers: {
+        'Content-Type': 'text/plain'
+      },
+      statusCode: 400
+    });
   }
-  const apiKey = new ApiKey(payload.key, payload.email, payload.hostname);
-  await apiKeyService.saveToken(apiKey);
-  await sesService.sendApiKeyConfirmation(apiKey);
-  callback(null, {
-    statusCode: 200
-  });
 };
 
 exports.confirm = async (event: AWSLambda.APIGatewayEvent, context: AWSLambda.Context, callback: AWSLambda.Callback) => {
@@ -73,3 +93,21 @@ exports.confirm = async (event: AWSLambda.APIGatewayEvent, context: AWSLambda.Co
     });
   }
 };
+
+async function recursiveWait(attempt: number, maxAttempts: number, sleepMs: number, callback: () => Promise<any>) {
+  if (attempt === maxAttempts) {
+    return false;
+  }
+  await sleep(sleepMs);
+  const result = await callback();
+  if (result) {
+    return result;
+  }
+  return recursiveWait(attempt + 1, maxAttempts, sleepMs, callback);
+}
+
+async function sleep(ms: number) {
+  return new Promise((resolve, reject) => {
+    setTimeout(resolve, ms);
+  });
+}
