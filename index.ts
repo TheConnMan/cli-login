@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import ApiKeyService from './lib/ApiKeyService';
 import SesService from './lib/SesService';
 import UserService from './lib/UserService';
+import Utilities from './lib/Utilities';
 
 import ApiKey from './model/ApiKey';
 import User from './model/User';
@@ -48,7 +49,7 @@ exports.auth = async (event: AWSLambda.APIGatewayEvent, context: AWSLambda.Conte
     const apiKey = new ApiKey(payload.key, payload.email, payload.hostname);
     await apiKeyService.saveToken(apiKey);
     await sesService.sendApiKeyConfirmation(apiKey);
-    const result = await recursiveWait(0, 10, 2500, () => {
+    const result = await Utilities.recursiveWait(0, 10, 2500, () => {
       return apiKeyService.get(apiKey.key);
     });
     if (result) {
@@ -93,21 +94,3 @@ exports.confirm = async (event: AWSLambda.APIGatewayEvent, context: AWSLambda.Co
     });
   }
 };
-
-async function recursiveWait(attempt: number, maxAttempts: number, sleepMs: number, callback: () => Promise<any>) {
-  if (attempt === maxAttempts) {
-    return false;
-  }
-  await sleep(sleepMs);
-  const result = await callback();
-  if (result) {
-    return result;
-  }
-  return recursiveWait(attempt + 1, maxAttempts, sleepMs, callback);
-}
-
-async function sleep(ms: number) {
-  return new Promise((resolve, reject) => {
-    setTimeout(resolve, ms);
-  });
-}
