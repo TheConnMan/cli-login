@@ -48,7 +48,7 @@ exports.auth = async (event: AWSLambda.APIGatewayEvent, context: AWSLambda.Conte
     const apiKey = new ApiKey(payload.key, payload.email, payload.hostname);
     await apiKeyService.saveToken(apiKey);
     await sesService.sendApiKeyConfirmation(apiKey);
-    const result = await recursiveWait(0, 15, 5000, () => {
+    const result = await recursiveWait(0, 10, 2500, () => {
       return apiKeyService.get(apiKey.key);
     });
     if (result) {

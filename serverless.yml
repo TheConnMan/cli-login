@@ -45,6 +45,7 @@ functions:
           cors: true
   auth:
     handler: index.auth
+    timeout: 30
     events:
       - http:
           path: auth
