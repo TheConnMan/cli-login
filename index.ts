@@ -83,7 +83,7 @@ exports.confirm = async (event: AWSLambda.APIGatewayEvent, context: AWSLambda.Co
       userService.save(new User(key.email));
     }
     callback(null, {
-      body: JSON.stringify(key),
+      body: `You've successfully confirmed your account!`,
       statusCode: 200
     });
   } catch (e) {
